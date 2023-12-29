@@ -1,44 +1,23 @@
 #include "CEspControl.h"
-#include "CNetIf.h"
 #include <string>
 #include <vector>
 
-using namespace std;
-
-/* GPIO_LOCAL C33 
-   - 0. P010 
-   - 1. P207
-   - 2. P803 - D100 - DOWNLOAD - IO9 - DATA_READY - TEST POINT tra 2 e 3 
-   - 3. P804 - D101 - RESET
-   - 4. P806 - D102 - ACK      - IO5 - HANDSHAKE - ESP MDTI
-   - 5. P504 
-   - 6. P906 
-
-   CHIP SELECT SPI
-   P104 - D104
-   
-   */
-
-//#define ENABLE_ESP_LOG
-
-#define SerialESP      Serial5
-
-extern int esp_host_spi_init();
-
-void getESPDebugLog();
 int displayMenu();
 void makeRequest(int req);
-string prompt(string p);
+std::string prompt(std::string p);
 
 
 const char mac_address[] = "aa:bb:cc:dd:ee:ff";
 
+bool wifiHwInitialized = false;
 
 
 int initEvent(CCtrlMsgWrapper *resp) {
   if(resp->isInitEventReceived() == ESP_CONTROL_OK) {
     Serial.println("[EVENT !!!!]: Init event received");
+    wifiHwInitialized = true;
   }
+  return ESP_CONTROL_OK;
 }
 
 int stationDisconnectionEvent(CCtrlMsgWrapper *resp) {
@@ -47,6 +26,7 @@ int stationDisconnectionEvent(CCtrlMsgWrapper *resp) {
     Serial.print("[EVENT !!!!]: C33 was disconnected from AP for reason ");
     Serial.println(reason);
   }
+  return ESP_CONTROL_OK;
 }
 
 int disconnectionFromSofApEvent(CCtrlMsgWrapper *resp) {
@@ -56,6 +36,7 @@ int disconnectionFromSofApEvent(CCtrlMsgWrapper *resp) {
     Serial.print(MAC);
     Serial.println(" disconnected from ESP32 Soft AP");
   }
+  return ESP_CONTROL_OK;
 }
 
 
@@ -65,6 +46,7 @@ int heartBeatEvent(CCtrlMsgWrapper *resp) {
     Serial.print("[EVENT !!!!]: heart beat n ");
     Serial.println(hb);
   }
+  return ESP_CONTROL_OK;
 }
 
 
@@ -74,7 +56,6 @@ int heartBeatEvent(CCtrlMsgWrapper *resp) {
 /* -------------------------------------------------------------------------- */
 void setup() {
   Serial.begin(115200);
-  SerialESP.begin(115200);
   while(!Serial) {
     
   }
@@ -82,11 +63,20 @@ void setup() {
   CEspControl::getInstance().listenForStationDisconnectEvent(stationDisconnectionEvent);
   CEspControl::getInstance().listenForDisconnectionFromSoftApEvent(disconnectionFromSofApEvent);
   
-
-  
-
   Serial.println("STARTING PROGRAM");
-  delay(1000);
+
+  int err = CEspControl::getInstance().initSpiDriver();
+  if (err != 0) {
+    Serial.print("Error initSpiDriver err ");
+    Serial.println(err);
+  } else {
+    Serial.println("initSpiDriver OK");
+  }
+  while (!wifiHwInitialized) {
+    CEspControl::getInstance().communicateWithEsp();
+    delay(100);
+  }
+
 }
 
 
@@ -107,7 +97,7 @@ void loop() {
 
 /* -------------------------------------------------------------------------- */
 bool connected_to_access_point = false;
-vector<AccessPoint_t> access_point_list;
+std::vector<AccessPoint_t> access_point_list;
 WifiMode_t status_wifi_mode = WIFI_MODE_NONE;
 /* -------------------------------------------------------------------------- */
 
@@ -171,7 +161,7 @@ void printBuffer(uint8_t *b, int len, bool ret) {
 }
 
 /* -------------------------------------------------------------------------- */
-void printAccessPointList(vector<AccessPoint_t>& list) {
+void printAccessPointList(std::vector<AccessPoint_t>& list) {
 /* -------------------------------------------------------------------------- */  
   for(unsigned int i = 0; i < list.size(); i++) {
       printIndex(i,"SSID");      
@@ -248,7 +238,7 @@ void printSoftAccessPointCfg(SoftApCfg_t &cfg) {
   
 }
 /* -------------------------------------------------------------------------- */
-void printConnectedStationList(vector<WifiConnectedSta_t>& list) {
+void printConnectedStationList(std::vector<WifiConnectedSta_t>& list) {
 /* -------------------------------------------------------------------------- */  
   for(unsigned int i = 0; i < list.size(); i++) {
       printIndex(i,"SSID");      
@@ -275,19 +265,20 @@ void connectAccessPoint() {
   else {
     printAccessPointList(access_point_list);
   
-    string ap_str = prompt("Choose Access Point from the previous list : ");
+    std::string ap_str = prompt("Choose Access Point from the previous list : ");
     if(stoi(ap_str) < 0 || stoi(ap_str) >= access_point_list.size() ) {
       Serial.println("[ERROR]: Invalid choice");
       return;
     }
 
-    string pwd = prompt("Enter the password: ");
+    std::string pwd = prompt("Enter the password: ");
     int i = stoi(ap_str);
     
     Serial.println(">>> [APP]: Connecting to Access Point");
     WifiApCfg_t ap;
     memcpy(ap.ssid,access_point_list[i].ssid,SSID_LENGTH);
     memcpy(ap.pwd,pwd.c_str(),pwd.size());
+    ap.pwd[pwd.size()] = 0;
     memcpy(ap.bssid,access_point_list[i].bssid,BSSID_LENGTH);
     ap.channel = access_point_list[i].channel;
     ap.encryption_mode = access_point_list[i].encryption_mode;
@@ -360,7 +351,7 @@ void getWifiMacAddress() {
 /* -------------------------------------------------------------------------- */
 void setWifiMacAddress() {
 /* -------------------------------------------------------------------------- */  
-  string mac = prompt("Enter the new MAC address:");
+  std::string mac = prompt("Enter the new MAC address:");
   WifiMac_t MMM;
   MMM.mode = status_wifi_mode;
   memcpy(MMM.mac,mac.c_str(), mac.size());
@@ -375,13 +366,13 @@ void getWifiMode() {
 /* -------------------------------------------------------------------------- */  
   Serial.println(">>> [APP]: Sending request GET WIFI MODE");    
   int res = CEspControl::getInstance().getWifiMode(status_wifi_mode);
-  printResult(res, "get Wifi Mode", to_string(status_wifi_mode).c_str());
+  printResult(res, "get Wifi Mode", std::to_string(status_wifi_mode).c_str());
 }
 
 /* -------------------------------------------------------------------------- */
 void setWifiMode() {
 /* -------------------------------------------------------------------------- */  
-  string mode_str = prompt("Enter the new Wifi mode 1. none / 2.sta / 3.ap / 4.apsta: ");
+  std::string mode_str = prompt("Enter the new Wifi mode 1. none / 2.sta / 3.ap / 4.apsta: ");
   int mode = stoi(mode_str);
   Serial.print(">>> [APP]: Sending request SET WIFI MODE to ");
   Serial.print(mode);
@@ -389,7 +380,7 @@ void setWifiMode() {
   if(res == ESP_CONTROL_OK) {
     status_wifi_mode = (WifiMode_t )mode;
   }
-  printResult(res, "set Wifi Mode", to_string(status_wifi_mode).c_str());
+  printResult(res, "set Wifi Mode", std::to_string(status_wifi_mode).c_str());
   
 }
 
@@ -470,7 +461,7 @@ void stopSoftAccessPoint() {
 
 
 
-vector<WifiConnectedSta_t> connected_stations;
+std::vector<WifiConnectedSta_t> connected_stations;
 
 /* -------------------------------------------------------------------------- */
 void getConnectedStationList() {
@@ -538,10 +529,10 @@ void setUpHearthBeat() {
    ########################################################################## */
 
 /* -------------------------------------------------------------------------- */
-string prompt(string p) {
+std::string prompt(std::string p) {
 /* -------------------------------------------------------------------------- */  
   Serial.println(p.c_str());
-  string c;
+  std::string c;
   bool cmd_acquired = false;
   
   while(!cmd_acquired) {
@@ -549,11 +540,11 @@ string prompt(string p) {
     if(Serial.available()) {
       ch = Serial.read();
     
-      if(ch == 0x0A) {
+      if(ch == '\n') {
         cmd_acquired = true;
         return c;
       }
-      else {
+      else if(ch != '\r') {
         c += ch;
       }
     }
@@ -674,18 +665,19 @@ int displayMenu() {
   Serial.println("Choose the option number:>");
   Serial.println("-----------------------------------------------------------");
   
-  string c;
+  std::string c;
   bool cmd_acquired = false;
   int rv = -1;
   while(!cmd_acquired) {
     char ch;
     if(Serial.available()) {
       ch = Serial.read();
-      if(ch == 0x0A) {
+      Serial.print(ch);
+      if(ch == '\n') {
         cmd_acquired = true;
         rv = stoi(c);
       }
-      else {
+      else if(ch >= '0' && ch <='9') {
         c += ch;
       }
     }
@@ -694,10 +686,4 @@ int displayMenu() {
     }
   }
   return rv;
-}
-
-void getESPDebugLog() {
-  while(SerialESP.available()) {
-     Serial.write(SerialESP.read());
-  }
 }
