@@ -204,6 +204,7 @@ CMsg& CMsg::operator=(CMsg&& m) {
       Serial.println(" bad!");
       #endif
    }
+   return *this;
 }
 
 
@@ -498,6 +499,7 @@ bool CMsg::add_msg(CMsg &msg) {
          return false;
       }
    }
+   return true;
 } 
 
 /* -------------------------------------------------------------------------- */
