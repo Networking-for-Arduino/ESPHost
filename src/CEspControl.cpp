@@ -73,12 +73,12 @@ uint8_t *CEspControl::getStationRx(uint8_t &if_num, uint16_t &dim) {
 /* -------------------------------------------------------------------------- */   
    uint8_t *rv = nullptr;
    CMsg msg;
-   __disable_irq();
+   //__disable_irq();
    bool res = CEspCom::getMsgForStation(msg);
    if(!res) {
       CEspCom::clearStationRx();
    }
-   __enable_irq();
+   //__enable_irq();
    if(res) {
       if_num = msg.get_if_num();
       dim = msg.get_protobuf_dim();
@@ -94,9 +94,9 @@ uint8_t *CEspControl::getStationRx(uint8_t &if_num, uint16_t &dim) {
 uint16_t CEspControl::peekStationRxMsgSize() {
 /* -------------------------------------------------------------------------- */
    uint16_t res;
-   __disable_irq();
+   //__disable_irq();
    res = CEspCom::peekMsgSizeForStation();
-   __enable_irq();
+   //__enable_irq();
    return res;
 }
 
@@ -105,12 +105,12 @@ uint8_t *CEspControl::getSoftApRx(uint8_t &if_num, uint16_t &dim) {
 /* -------------------------------------------------------------------------- */   
    uint8_t *rv = nullptr;
    CMsg msg; 
-   __disable_irq();
+   //__disable_irq();
    bool res = CEspCom::getMsgForSoftAp(msg);
    if(!res) {
       CEspCom::clearSoftApRx();
    }
-   __enable_irq();
+   //__enable_irq();
    if(res) {
       if_num = msg.get_if_num();
       dim = msg.get_protobuf_dim();
@@ -196,12 +196,12 @@ int CEspControl::process_msgs_received(CCtrlMsgWrapper* response) {
    bool res = false;
    do {
    /* get the message */
-   __disable_irq();
+   //__disable_irq();
    res = CEspCom::get_msg_from_esp(msg);
    if(!res) {
       CEspCom::clearFromEspQueue();
    }
-   __enable_irq();
+   //__enable_irq();
    if(res) {
       
       #ifdef ESP_HOST_DEBUG_ENABLED_AVOID
@@ -244,9 +244,9 @@ int CEspControl::process_msgs_received(CCtrlMsgWrapper* response) {
          Serial.print(" Station ");
          Serial.println(msg.get_if_num());
          #endif
-         __disable_irq();
+         //__disable_irq();
          CEspCom::storeStationMsg(msg); 
-         __enable_irq();
+         //__enable_irq();
       }
       else if(msg.get_if_type() == ESP_AP_IF) {
          #ifdef ESP_HOST_DEBUG_ENABLED_AVOID
@@ -254,9 +254,9 @@ int CEspControl::process_msgs_received(CCtrlMsgWrapper* response) {
          Serial.print(" Soft Ap ");
          Serial.println(msg.get_if_num());
          #endif
-         __disable_irq();
+         //__disable_irq();
          CEspCom::storeSoftApMsg(msg); 
-         __enable_irq();
+         //__enable_irq();
       }
       /* PRIV_MESSAGES_______________________________________________________ */
       else if(msg.get_if_type() == ESP_PRIV_IF) {
@@ -314,7 +314,7 @@ int CEspControl::wait_for_answer(CCtrlMsgWrapper* response) {
          break;
       }
 
-      R_BSP_SoftwareDelay(1000, BSP_DELAY_UNITS_MICROSECONDS);
+      delay(1);
       time_num++;
    } while(time_num < timeout_ms);
 
@@ -329,9 +329,9 @@ int CEspControl::send_net_packet(CMsg& msg) {
    if(msg.is_valid()) {
       /* if the message is valid send it to the spi driver in oder to be 
          sent to ESP32 */
-      __disable_irq();
+      //__disable_irq();
       CEspCom::send_msg_to_esp(msg);
-       __enable_irq();
+       //__enable_irq();
    }
    else {
       rv = ESP_CONTROL_WRONG_REQUEST_INVALID_MSG;
@@ -451,9 +451,9 @@ void CEspControl::prepare_and_send_request(AppMsgId_e id,
    }
    
    if(go_on) {
-      __disable_irq();
+      //__disable_irq();
       bool res = CEspCom::send_msg_to_esp(msg);
-       __enable_irq();
+       //__enable_irq();
       if(res) {
          /* setCallback returns true if a 'true' callback is set up, but it will in any
          case reset the cb if nullptr is passed */
