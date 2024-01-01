@@ -304,7 +304,9 @@ int CEspControl::wait_for_answer(CCtrlMsgWrapper* response) {
    
    do {
       /* send messages untill a valid message is received into the rx queu */
-      esp_host_perform_spi_communication(true);
+      if(isEspSpiInitialized() && !isSpiTransactionInProgress()) {
+         esp_host_perform_spi_communication(true);
+      }
    
       if(process_msgs_received(response) == ESP_CONTROL_MSG_RX) {
          #ifdef ESP_HOST_DEBUG_ENABLED_AVOID

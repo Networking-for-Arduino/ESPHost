@@ -21,7 +21,7 @@
 #ifndef ESP_HOSTED_SPI_DRIVER_H
 #define ESP_HOSTED_SPI_DRIVER_H
 
-#define ESP_HOST_DEBUG_ENABLED
+//#define ESP_HOST_DEBUG_ENABLED
 //#define ESP_HOST_DEBUG_ENABLED_AVOID
 
 #include "Arduino.h"
@@ -42,7 +42,6 @@ int esp_host_spi_init(void);
 int esp_host_perform_spi_communication(bool wait_for_valid_msg);
 
 bool isEspSpiInitialized() ;
-bool arePendingRxMsg();
 
 bool isSpiTransactionInProgress();
 

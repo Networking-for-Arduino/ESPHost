@@ -63,7 +63,7 @@
 static volatile uint8_t esp32_spi_rx_buffer[MAX_SPI_BUFFER_SIZE];
 static volatile uint8_t esp32_spi_tx_buffer[MAX_SPI_BUFFER_SIZE];
 
-static bool spi_transaction_in_progress = false;
+static volatile bool spi_transaction_in_progress = false;
 
 bool isSpiTransactionInProgress() { 
    bool rv = spi_transaction_in_progress;
@@ -146,12 +146,9 @@ bool esp_host_there_are_data_to_be_rx() {
    bool rv = digitalRead(DATA_READY);
 
    #ifdef ESP_HOST_DEBUG_ENABLED_AVOID
-   Serial.print("**** RX data? ");
    if(rv) {
+     Serial.print("**** RX data? ");
       Serial.println("YES!!!!!");
-   }
-   else {
-      Serial.println("no");
    }
    #endif
    return rv;
@@ -166,12 +163,9 @@ bool esp_host_there_are_data_to_be_tx() {
    }
 //   __enable_irq();
    #ifdef ESP_HOST_DEBUG_ENABLED_AVOID
-   Serial.print("**** TX data? ");
    if(rv) {
+     Serial.print("**** TX data? ");
       Serial.println("YES!!!!!");
-   }
-   else {
-      Serial.println("no");
    }
    #endif
    return rv;
@@ -222,6 +216,7 @@ int esp_host_perform_spi_communication(bool wait_for_valid_msg) {
 
    } while(continue_spi_communication);
    
+   spi_transaction_in_progress = false;
    return rv;
 }
 
@@ -270,10 +265,6 @@ int esp_host_spi_transaction(void) {
 
       }
    }
-   else {
-      
-      spi_transaction_in_progress = false;
-   }
    return rv; 
 }
 
@@ -299,10 +290,6 @@ int esp_host_send_and_receive(void) {
    } while(time_num < 5000);
 
    if(esp_ready) {
-      SPIWIFI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE2));
-      /* Put CS LOW */
-      digitalWrite(ESP_CS, LOW);
-      delayMicroseconds(100);
       
       /* memset RX buffer */
       memset((void *)esp32_spi_rx_buffer,0x00, MAX_SPI_BUFFER_SIZE);
@@ -317,10 +304,13 @@ int esp_host_send_and_receive(void) {
       Serial.println();
       #endif
 
-
+      SPIWIFI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE2));
+      digitalWrite(ESP_CS, LOW);
       for (int i = 0; i < MAX_SPI_BUFFER_SIZE; i++) {
         esp32_spi_rx_buffer[i] = SPIWIFI.transfer(esp32_spi_tx_buffer[i]);
       }
+      digitalWrite(ESP_CS, HIGH);
+      SPIWIFI.endTransaction();
 
       rv = ESP_HOSTED_SPI_DRIVER_OK;
 
@@ -332,10 +322,6 @@ int esp_host_send_and_receive(void) {
          }
       Serial.println();
       #endif
-      spi_transaction_in_progress = false;
-      /* in any case de-select ESP32 */
-      digitalWrite(ESP_CS, HIGH);
-      SPIWIFI.endTransaction();
    }
    else {
       rv = ESP_HOSTED_SPI_ESP_NOT_READY;
