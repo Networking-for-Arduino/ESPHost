@@ -35,7 +35,13 @@
  * Configuration defines 
  * ##################### */
 
-#ifdef USE_ESP32_DEVKIT
+#if defined(NINA_GPIO0)
+#define ESP_RESET         SPIWIFI_RESET
+#define HANDSHAKE         NINA_GPIO0
+#define DATA_READY        SPIWIFI_ACK
+#define ESP_CS            SPIWIFI_SS
+
+#elif USE_ESP32_DEVKIT
 /* GPIOs */
 #define ESP_RESET         5
 #define HANDSHAKE         7
@@ -128,10 +134,18 @@ int esp_host_spi_init(void) {
    /* +++++++++
     * RESET
     * +++++++++ */
+#if defined(NINA_GPIO0)
+   pinMode(NINA_GPIO0, OUTPUT);
+   digitalWrite(NINA_GPIO0, HIGH);
+#endif
    digitalWrite(ESP_RESET, LOW);
    delay(1);
-   pinMode(ESP_RESET, INPUT);
+   digitalWrite(ESP_RESET, HIGH);
    delay(2000);
+#if defined(NINA_GPIO0)
+   digitalWrite(NINA_GPIO0, LOW);
+   pinMode(NINA_GPIO0, INPUT);
+#endif
 
    spi_driver_initialized = true;
    return ESP_HOSTED_SPI_DRIVER_OK; 
