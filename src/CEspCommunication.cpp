@@ -156,3 +156,21 @@ bool CEspCom::getMsgForSoftAp(CMsg &msg) {
    }
    return false;
 }
+
+/* -------------------------------------------------------------------------- */
+int CEspCom::peekPayloadLenForStation() {
+/* -------------------------------------------------------------------------- */
+   if(CEspCom::rxStationQueue.size() > 0) {
+      return CEspCom::rxStationQueue.front().get_payload_len();
+   }
+   return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+int CEspCom::peekPayloadLenForSoftAp() {
+/* -------------------------------------------------------------------------- */
+   if(CEspCom::rxSoftApQueue.size() > 0) {
+      return CEspCom::rxSoftApQueue.front().get_payload_len();
+   }
+   return 0;
+}

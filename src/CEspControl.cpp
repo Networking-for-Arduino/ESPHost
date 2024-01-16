@@ -20,10 +20,6 @@
 
 #include "CEspControl.h"
 
-extern int esp_host_perform_spi_communication();
-extern int esp_host_spi_init(void);
-
-
 /* -------------------------------------------------------------------------- */
 /* GET INSTANCE SINGLETONE FUNCTION */
 /* -------------------------------------------------------------------------- */
@@ -47,11 +43,6 @@ CEspControl::~CEspControl() {
 /* -------------------------------------------------------------------------- */
 
 }
-
-
-
-
-   
 
 /* process priv messages */
 /* -------------------------------------------------------------------------- */
@@ -91,11 +82,40 @@ uint8_t *CEspControl::getStationRx(uint8_t &if_num, uint16_t &dim) {
 }
 
 /* -------------------------------------------------------------------------- */
+uint16_t CEspControl::getStationRx(uint8_t &if_num,  uint8_t *buff, uint16_t dim) {
+/* -------------------------------------------------------------------------- */
+     CMsg msg;
+    //__disable_irq();
+    bool res = CEspCom::getMsgForStation(msg);
+    if (!res) {
+        CEspCom::clearStationRx();
+        return 0;
+    }
+    //__enable_irq();
+    if_num = msg.get_if_num();
+    uint16_t len = msg.get_protobuf_dim();
+    if (len > dim)
+        return -1;
+    memcpy(buff, msg.data(), len);
+    return len;
+}
+
+/* -------------------------------------------------------------------------- */
 uint16_t CEspControl::peekStationRxMsgSize() {
 /* -------------------------------------------------------------------------- */
    uint16_t res;
    //__disable_irq();
    res = CEspCom::peekMsgSizeForStation();
+   //__enable_irq();
+   return res;
+}
+
+/* -------------------------------------------------------------------------- */
+uint16_t CEspControl::peekStationRxPayloadLen() {
+/* -------------------------------------------------------------------------- */
+   uint16_t res;
+   //__disable_irq();
+   res = CEspCom::peekPayloadLenForStation();
    //__enable_irq();
    return res;
 }
@@ -122,6 +142,34 @@ uint8_t *CEspControl::getSoftApRx(uint8_t &if_num, uint16_t &dim) {
    return rv;
 }
 
+/* -------------------------------------------------------------------------- */
+uint16_t CEspControl::getSoftApRx(uint8_t &if_num,  uint8_t *buff, uint16_t dim) {
+/* -------------------------------------------------------------------------- */
+     CMsg msg;
+    //__disable_irq();
+    bool res = CEspCom::getMsgForSoftAp(msg);
+    if (!res) {
+        CEspCom::clearSoftApRx();
+        return 0;
+    }
+    //__enable_irq();
+    if_num = msg.get_if_num();
+    uint16_t len = msg.get_protobuf_dim();
+    if (len > dim)
+        return -1;
+    memcpy(buff, msg.data(), len);
+    return len;
+}
+
+/* -------------------------------------------------------------------------- */
+uint16_t CEspControl::peekSoftApRxPayloadLen() {
+/* -------------------------------------------------------------------------- */
+   uint16_t res;
+   //__disable_irq();
+   res = CEspCom::peekPayloadLenForSoftAp();
+   //__enable_irq();
+   return res;
+}
 
 /* -------------------------------------------------------------------------- */
 /* PROCESS CONTROL MESSAGES */

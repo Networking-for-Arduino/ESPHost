@@ -136,8 +136,12 @@ public:
    int sendBuffer(ESP_INTERFACE_TYPE type, uint8_t num, uint8_t *buf, uint16_t dim);
    
    uint8_t *getStationRx(uint8_t &if_num, uint16_t &dim);
+   uint16_t getStationRx(uint8_t &if_num, uint8_t *buff, uint16_t dim);
    uint16_t peekStationRxMsgSize();
+   uint16_t peekStationRxPayloadLen();
    uint8_t *getSoftApRx(uint8_t &if_num, uint16_t &dim);
+   uint16_t getSoftApRx(uint8_t &if_num, uint8_t *buff, uint16_t dim);
+   uint16_t peekSoftApRxPayloadLen();
 
    
    

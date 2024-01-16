@@ -62,6 +62,8 @@ public:
    static bool getMsgForStation(CMsg &msg);
    static int  peekMsgSizeForStation();
    static bool getMsgForSoftAp(CMsg &msg);
+   static int  peekPayloadLenForStation();
+   static int  peekPayloadLenForSoftAp();
 
    static void clearStationRx();
    static void clearSoftApRx();
