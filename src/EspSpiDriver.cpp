@@ -41,6 +41,14 @@
 #define DATA_READY        SPIWIFI_ACK
 #define ESP_CS            SPIWIFI_SS
 
+#elif defined(ESPHOSTSPI)
+#define ESP_RESET         ESPHOST_RESET
+#define HANDSHAKE         ESPHOST_HANDSHAKE
+#define DATA_READY        ESPHOST_DATA_READY
+
+#define ESP_CS  ESPHOST_CS
+#define SPIWIFI ESPHOSTSPI
+
 #elif USE_ESP32_DEVKIT
 /* GPIOs */
 #define ESP_RESET         5
@@ -59,6 +67,10 @@
 /* SPI PIN definition */
 #define SPIWIFI SPI1
 #define ESP_CS     103
+#endif
+
+#ifndef ESPHOSTSPI_MHZ
+#define ESPHOSTSPI_MHZ 10
 #endif
 
 /* #################
@@ -318,8 +330,9 @@ int esp_host_send_and_receive(void) {
       Serial.println();
       #endif
 
-      SPIWIFI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE2));
+      SPIWIFI.beginTransaction(SPISettings(1000000ul * ESPHOSTSPI_MHZ, MSBFIRST, SPI_MODE2));
       digitalWrite(ESP_CS, LOW);
+      delayMicroseconds(100);
       for (int i = 0; i < MAX_SPI_BUFFER_SIZE; i++) {
         esp32_spi_rx_buffer[i] = SPIWIFI.transfer(esp32_spi_tx_buffer[i]);
       }

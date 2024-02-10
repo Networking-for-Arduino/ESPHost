@@ -6,11 +6,17 @@ The library is meant to serve as low level driver for a LwIP network interface i
 
 The library was originally written for Arduino Portenta C33 with Arduino Renesas Core.
 
-## Notes:
+## Configuration
 
-* configuration is TODO
-* pins are hardcoded in EspSpiDriver
-* SPI SCK is set to 10 MHz for classic ESP32
+Pins are configured with defines. To add the defines, modify boards.txt or create boards.local.txt next to boards.txt and add <board>.build.extra_flags=. For boards with defines for the WiFiNINA library it is enough to add `-DESPHOSTSPI`.
+
+Complete settings require to specify pins. Example:
+
+```
+rpipico.build.extra_flags=-DESPHOST_RESET=D5 -DESPHOST_HANDSHAKE=D7 -DESPHOST_DATA_READY=D6 -DESPHOST_CS=D10 -DESPHOSTSPI=SPI
+```
+
+Default SPI frequency set in the library is 10 MHz. It is the highest SPI speed for classic ESP32. Firmware for C and S series ESP32 are build with higher SPI frequency. To specify the SPI frequency to be used by the ESPHost library, add `-DESPHOSTSPI_MHZ=30` to `<board>.build.extra_flags`.
 
 ## Firmware
 
