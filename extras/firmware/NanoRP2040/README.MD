@@ -3,7 +3,7 @@
 
 ## The firmware
 
-The firmware in this folder is built from GitHub master tag 0.5.0. Modifications are in build configuration, some source fixes and pull-up of TX pin is switched off, to not pull-up the CS pin.
+The firmware in this folder is built from GitHub master tag 0.5.0. Modifications are in build configuration, SPI pins in source, some source fixes and pull-up of TX pin is switched off, to not pull-up the CS pin.
 
 ## Upload instructions
 
