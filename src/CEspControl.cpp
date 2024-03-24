@@ -502,9 +502,9 @@ void CEspControl::prepare_and_send_request(AppMsgId_e id,
    
    if(go_on) {
       //__disable_irq();
-      bool res = CEspCom::send_msg_to_esp(msg);
+      bool b = CEspCom::send_msg_to_esp(msg);
        //__enable_irq();
-      if(res) {
+      if(b) {
          /* setCallback returns true if a 'true' callback is set up, but it will in any
          case reset the cb if nullptr is passed */
          if(id == CTRL_REQ_CONFIG_HEARTBEAT) {
