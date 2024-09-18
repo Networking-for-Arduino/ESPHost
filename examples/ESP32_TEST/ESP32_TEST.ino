@@ -266,7 +266,7 @@ void connectAccessPoint() {
     printAccessPointList(access_point_list);
   
     std::string ap_str = prompt("Choose Access Point from the previous list : ");
-    if(stoi(ap_str) < 0 || stoi(ap_str) >= access_point_list.size() ) {
+    if(stoi(ap_str) < 0 || stoi(ap_str) >= (int)access_point_list.size() ) {
       Serial.println("[ERROR]: Invalid choice");
       return;
     }
