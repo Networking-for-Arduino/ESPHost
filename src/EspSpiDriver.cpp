@@ -333,9 +333,14 @@ int esp_host_send_and_receive(void) {
       SPIWIFI.beginTransaction(SPISettings(1000000ul * ESPHOSTSPI_MHZ, MSBFIRST, SPI_MODE2));
       digitalWrite(ESP_CS, LOW);
       delayMicroseconds(100);
+#if defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED) 
+      SPIWIFI.transferAsync((const void *)esp32_spi_tx_buffer, (void *)esp32_spi_rx_buffer, MAX_SPI_BUFFER_SIZE);
+      while (!SPIWIFI.finishedAsync());
+#else
       for (int i = 0; i < MAX_SPI_BUFFER_SIZE; i++) {
         esp32_spi_rx_buffer[i] = SPIWIFI.transfer(esp32_spi_tx_buffer[i]);
       }
+#endif
       digitalWrite(ESP_CS, HIGH);
       SPIWIFI.endTransaction();
 
