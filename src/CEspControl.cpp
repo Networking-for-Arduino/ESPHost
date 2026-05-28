@@ -587,6 +587,13 @@ int CEspControl::getWifiMacAddress(WifiMac_t& CAM, EspCallback_f cb) {
    Serial.println("[REQUEST] CEspControl::getWifiMacAddress");
    #endif
 
+   /* The device's get-MAC handler needs a concrete interface (STA or AP).
+      Reject WIFI_MODE_NONE up front so the caller gets a clear error rather
+      than a malformed request that the slave silently drops. */
+   if(CAM.mode <= WIFI_MODE_NONE || CAM.mode >= WIFI_MODE_MAX) {
+      return ESP_CONTROL_WRONG_REQUEST_INVALID_MSG;
+   }
+
    int rv = ESP_CONTROL_OK;
    CCtrlMsgWrapper req;
    prepare_and_send_request(CTRL_REQ_GET_MAC_ADDR, rv, &CAM, cb, req);
@@ -604,14 +611,18 @@ int CEspControl::setWifiMacAddress(WifiMac_t& CAM, EspCallback_f cb) {
    Serial.println("[REQUEST] CEspControl::setWifiMacAddress");
    #endif
 
+   if(CAM.mode <= WIFI_MODE_NONE || CAM.mode >= WIFI_MODE_MAX) {
+      return ESP_CONTROL_WRONG_REQUEST_INVALID_MSG;
+   }
+
    int rv = ESP_CONTROL_OK;
    /* message request preparation */
-   CCtrlMsgWrapper req; 
+   CCtrlMsgWrapper req;
    prepare_and_send_request(CTRL_REQ_SET_MAC_ADDR, rv, &CAM, cb, req);
    if(rv == ESP_CONTROL_OK) {
       rv = req.checkMacAddressSet();
    }
-   
+
    return rv;
 }
 

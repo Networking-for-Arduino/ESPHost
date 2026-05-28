@@ -561,7 +561,7 @@ public:
 
    /* ----------------------------------------------------------------------- */
    CMsg getMsg() {
-   /* ----------------------------------------------------------------------- */   
+   /* ----------------------------------------------------------------------- */
       int protobuf_len = ctrl_msg__get_packed_size(&request);
       CMsg msg(protobuf_len);
       if(msg.is_valid() && payload_set){
@@ -571,7 +571,11 @@ public:
          msg.set_payload_header(ESP_SERIAL_IF, 0);
          return msg;
       }
-      return CMsg(0);
+      /* default-constructed CMsg has is_valid()==false so the caller's
+         send_msg_to_esp will reject it and prepare_and_send_request will
+         return ESP_CONTROL_WRONG_REQUEST_INVALID_MSG instead of shipping
+         a zero-payload frame and blocking in wait_for_answer. */
+      return CMsg();
    }
 
    /* ----------------------------------------------------------------------- */
