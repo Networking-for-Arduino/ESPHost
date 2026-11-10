@@ -333,9 +333,15 @@ int esp_host_send_and_receive(void) {
       SPIWIFI.beginTransaction(SPISettings(1000000ul * ESPHOSTSPI_MHZ, MSBFIRST, SPI_MODE2));
       digitalWrite(ESP_CS, LOW);
       delayMicroseconds(100);
-#if defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED) 
-      SPIWIFI.transferAsync((const void *)esp32_spi_tx_buffer, (void *)esp32_spi_rx_buffer, MAX_SPI_BUFFER_SIZE);
-      while (!SPIWIFI.finishedAsync());
+#if defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED)
+      /* Use the blocking buffer transfer. It is as fast as transferAsync()
+         followed by a busy wait, but does not depend on the DMA interrupt:
+         this function also runs inside the handshake GPIO interrupt (the
+         lwIP packet handler), and in arduino-pico 6.2.0 finishedAsync()
+         only turns true when the DMA_IRQ_0 handler has run. With both IRQs
+         at the same priority the wait there never ends and the board hangs
+         as soon as a connection is up. */
+      SPIWIFI.transfer((const void *)esp32_spi_tx_buffer, (void *)esp32_spi_rx_buffer, MAX_SPI_BUFFER_SIZE);
 #else
       for (int i = 0; i < MAX_SPI_BUFFER_SIZE; i++) {
         esp32_spi_rx_buffer[i] = SPIWIFI.transfer(esp32_spi_tx_buffer[i]);
