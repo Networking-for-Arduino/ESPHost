@@ -294,6 +294,18 @@ int esp_host_spi_transaction(void) {
    return rv; 
 }
 
+/* esp_host_send_and_receive() also runs inside the handshake GPIO interrupt
+   (the lwIP packet handler). On arduino-pico delayMicroseconds() is sleep_us(),
+   which must not be used there: it sleeps until a timer alarm interrupt that
+   can't preempt the GPIO interrupt, so the wait may never end. */
+static inline void esp_host_delay_us(unsigned int us) {
+#if defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED)
+   busy_wait_us_32(us);
+#else
+   delayMicroseconds(us);
+#endif
+}
+
 /* -------------------------------------------------------------------------- */
 int esp_host_send_and_receive(void) {
 /* -------------------------------------------------------------------------- */   
@@ -311,7 +323,7 @@ int esp_host_send_and_receive(void) {
          #endif
          break;
       }
-      delayMicroseconds(100);
+      esp_host_delay_us(100);
       time_num++;
    } while(time_num < 5000);
 
@@ -332,7 +344,7 @@ int esp_host_send_and_receive(void) {
 
       SPIWIFI.beginTransaction(SPISettings(1000000ul * ESPHOSTSPI_MHZ, MSBFIRST, SPI_MODE2));
       digitalWrite(ESP_CS, LOW);
-      delayMicroseconds(100);
+      esp_host_delay_us(100);
 #if defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED)
       /* Use the blocking buffer transfer. It is as fast as transferAsync()
          followed by a busy wait, but does not depend on the DMA interrupt:
