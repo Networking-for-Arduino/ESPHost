@@ -400,10 +400,17 @@ void CMsg::set_payload_offset(uint16_t offset) { payload_header->offset = (uint1
 uint16_t CMsg::get_payload_offset()            { return (uint16_t)payload_header->offset;}
 void CMsg::set_seq_num(uint16_t sq)            { payload_header->seq_num = sq;}
 uint16_t CMsg::get_seq_num()                   { return payload_header->seq_num;}
+void CMsg::set_hci_pkt_type(uint8_t t)         { payload_header->hci_pkt_type = t;}
+uint8_t CMsg::get_hci_pkt_type()               { return payload_header->hci_pkt_type;}
 
 /* -------------------------------------------------------------------------- */
 void CMsg::set_checksum() { 
 /* -------------------------------------------------------------------------- */   
+   /* the checksum is computed over the whole frame, checksum field included:
+      clear it first so a second call (e.g. after set_hci_pkt_type) does not
+      sum in the previous checksum value, the receiver zeroes the field before
+      verifying */
+   payload_header->checksum = 0;
    payload_header->checksum = htole16(compute_checksum(buf,dim)); 
 }
 
@@ -450,7 +457,6 @@ bool CMsg::store_rx_buffer(const uint8_t *buffer, uint32_t d) {
    if( rx_payload_len > 0 ) {
       /* verify the length and the checksum are correct, if ok it is safe to 
          initialize the message */
-
       clear(); /* just in case....*/
 
       uint16_t request_size = esp_payload_header_size + rx_payload_len;
