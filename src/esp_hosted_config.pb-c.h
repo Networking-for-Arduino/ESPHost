@@ -4,7 +4,11 @@
 #ifndef PROTOBUF_C_esp_5fhosted_5fconfig_2eproto__INCLUDED
 #define PROTOBUF_C_esp_5fhosted_5fconfig_2eproto__INCLUDED
 
-#include <protobuf-c/protobuf-c.h>
+/* Quoted (not angle) include: protobuf-c is vendored inside this library, and
+   a quoted include resolves relative to this file so consumers outside the
+   library (e.g. the RP2040 core's esphosted_bt.cpp) can include this header
+   without adding the library src dir to the include path. */
+#include "protobuf-c/protobuf-c.h"
 
 PROTOBUF_C__BEGIN_DECLS
 

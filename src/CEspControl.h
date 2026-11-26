@@ -134,6 +134,19 @@ public:
    int setWifiMaxTxPower(uint32_t max_power, EspCallback_f cb = nullptr);
 
    int sendBuffer(ESP_INTERFACE_TYPE type, uint8_t num, uint8_t *buf, uint16_t dim);
+
+   /* HCI (Bluetooth) frames over the ESP-Hosted link. pktType is the H4
+      packet type (0x01 command, 0x02 ACL, 0x04 event); buf is the HCI packet
+      WITHOUT the H4 type byte, which travels in the frame header instead. */
+   int sendHciPacket(uint8_t pktType, uint8_t *buf, uint16_t dim);
+   /* pops one received HCI frame; returns the HCI packet length (0 = queue
+      empty, frame too big for buf is dropped and reported as 0) and sets
+      pktType. Regardless of firmware framing (H4 type in the header field or
+      as first payload byte), buf receives the bare HCI packet and pktType
+      the H4 type (0x02 ACL, 0x04 event) */
+   uint16_t getHciRx(uint8_t &pktType, uint8_t *buf, uint16_t bufsize);
+   /* payload length of the head HCI frame without popping it (0 = empty) */
+   uint16_t peekHciRx();
    
    uint8_t *getStationRx(uint8_t &if_num, uint16_t &dim);
    uint16_t getStationRx(uint8_t &if_num, uint8_t *buff, uint16_t dim);

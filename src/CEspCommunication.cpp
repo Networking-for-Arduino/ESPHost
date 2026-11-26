@@ -24,6 +24,7 @@ std::queue<CMsg> CEspCom::to_ESP32_queue;
 std::queue<CMsg> CEspCom::from_ESP32_queue;
 std::queue<CMsg> CEspCom::rxStationQueue;
 std::queue<CMsg> CEspCom::rxSoftApQueue;
+std::queue<CMsg> CEspCom::rxHciQueue;
 /* -------------------------------------------------------------------------- */
 bool CEspCom::send_msg_to_esp(CMsg &msg) {
 /* -------------------------------------------------------------------------- */  
@@ -173,4 +174,41 @@ int CEspCom::peekPayloadLenForSoftAp() {
       return CEspCom::rxSoftApQueue.front().get_payload_len();
    }
    return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+bool CEspCom::storeHciMsg(CMsg &msg) {
+/* -------------------------------------------------------------------------- */   
+   if(msg.is_valid()) {
+      CEspCom::rxHciQueue.push(std::move(msg));
+      return true;
+   }
+   return false;
+
+}
+
+/* -------------------------------------------------------------------------- */
+bool CEspCom::getMsgForHci(CMsg &msg) {
+/* -------------------------------------------------------------------------- */
+   if(CEspCom::rxHciQueue.size() > 0) {
+      msg = std::move(CEspCom::rxHciQueue.front());
+      CEspCom::rxHciQueue.pop();
+      return true;
+   }
+   return false;
+}
+
+/* -------------------------------------------------------------------------- */
+int CEspCom::peekPayloadLenForHci() {
+/* -------------------------------------------------------------------------- */
+   if(CEspCom::rxHciQueue.size() > 0) {
+      return CEspCom::rxHciQueue.front().get_payload_len();
+   }
+   return 0;
+}
+
+/* -------------------------------------------------------------------------- */
+void CEspCom::clearHciRx() {
+/* -------------------------------------------------------------------------- */   
+   CEspCom::rxHciQueue = {};
 }

@@ -170,6 +170,11 @@ public:
    uint16_t get_payload_offset();
    void set_seq_num(uint16_t sq);
    uint16_t get_seq_num();
+   /* HCI packet type (H4: 0x01 cmd, 0x02 ACL, 0x04 event), carried in the
+      union field at the end of the payload header. Must be set BEFORE
+      set_checksum(), the checksum covers the whole frame. */
+   void set_hci_pkt_type(uint8_t t);
+   uint8_t get_hci_pkt_type();
 
    void set_checksum();
    /* verify checksum use pointer to a user defined payload header because the 

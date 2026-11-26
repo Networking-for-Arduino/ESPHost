@@ -36,6 +36,7 @@ private:
    static std::queue<CMsg> from_ESP32_queue;
    static std::queue<CMsg> rxStationQueue;
    static std::queue<CMsg> rxSoftApQueue;
+   static std::queue<CMsg> rxHciQueue;
 public:
    /* application layer call this function when wants to send a message to esp*/
    static bool send_msg_to_esp(CMsg &msg);
@@ -59,14 +60,18 @@ public:
 
    static bool storeStationMsg(CMsg &msg);
    static bool storeSoftApMsg(CMsg &msg); 
+   static bool storeHciMsg(CMsg &msg);
    static bool getMsgForStation(CMsg &msg);
    static int  peekMsgSizeForStation();
    static bool getMsgForSoftAp(CMsg &msg);
+   static bool getMsgForHci(CMsg &msg);
    static int  peekPayloadLenForStation();
    static int  peekPayloadLenForSoftAp();
+   static int  peekPayloadLenForHci();
 
    static void clearStationRx();
    static void clearSoftApRx();
+   static void clearHciRx();
    static void clearFromEspQueue();
    static void clearToEspQueue();
 

@@ -306,6 +306,13 @@ int CEspControl::process_msgs_received(CCtrlMsgWrapper* response) {
          CEspCom::storeSoftApMsg(msg); 
          //__enable_irq();
       }
+      /* HCI_MESSAGES________________________________________________________ */
+      else if(msg.get_if_type() == ESP_HCI_IF) {
+         #ifdef ESP_HOST_DEBUG_ENABLED_AVOID
+         Serial.println(" HCI MESSAGE");
+         #endif
+         CEspCom::storeHciMsg(msg);
+      }
       /* PRIV_MESSAGES_______________________________________________________ */
       else if(msg.get_if_type() == ESP_PRIV_IF) {
          #ifdef ESP_HOST_DEBUG_ENABLED_AVOID
@@ -396,6 +403,56 @@ int CEspControl::sendBuffer(ESP_INTERFACE_TYPE type, uint8_t num, uint8_t *buf, 
    CCtrlMsgWrapper req; 
    CMsg msg = req.getNetIfMsg(type, num, buf, dim);
    return send_net_packet(msg);
+}
+
+/* -------------------------------------------------------------------------- */
+int CEspControl::sendHciPacket(uint8_t pktType, uint8_t *buf, uint16_t dim) {
+/* -------------------------------------------------------------------------- */
+   CCtrlMsgWrapper req;
+   CMsg msg = req.getNetIfMsg(ESP_HCI_IF, 0, buf, dim);
+   if(!msg.is_valid()) {
+      return ESP_CONTROL_WRONG_REQUEST_INVALID_MSG;
+   }
+   /* the H4 packet type lives in the payload header union; it must be set
+      before the checksum is (re)computed, the checksum covers the whole
+      frame including the header */
+   msg.set_hci_pkt_type(pktType);
+   msg.set_checksum();
+   return send_net_packet(msg);
+}
+
+/* -------------------------------------------------------------------------- */
+uint16_t CEspControl::getHciRx(uint8_t &pktType, uint8_t *buf, uint16_t bufsize) {
+/* -------------------------------------------------------------------------- */
+   CMsg msg;
+   if(!CEspCom::getMsgForHci(msg)) {
+      return 0;
+   }
+   uint16_t len = msg.get_protobuf_dim();
+   uint8_t *data = msg.data();
+   pktType = msg.get_hci_pkt_type();
+   /* firmware <= 0.0.5 sends the H4 packet type as the first payload byte and
+      leaves the header field 0; newer firmware puts it in the header only.
+      Normalize: caller always gets the type in pktType and the bare HCI
+      packet in buf */
+   if(pktType == 0 && len > 0) {
+      pktType = data[0];
+      data++;
+      len--;
+   }
+   if(len > bufsize) {
+      /* oversized frame (should not happen: HCI frames fit in the SPI
+         buffer) - drop it rather than corrupt the caller's buffer */
+      return 0;
+   }
+   memcpy(buf, data, len);
+   return len;
+}
+
+/* -------------------------------------------------------------------------- */
+uint16_t CEspControl::peekHciRx() {
+/* -------------------------------------------------------------------------- */
+   return (uint16_t)CEspCom::peekPayloadLenForHci();
 }
 
 
