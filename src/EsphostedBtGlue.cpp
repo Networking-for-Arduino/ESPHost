@@ -46,10 +46,18 @@ typedef struct esphostedHciOps {
 void esphostedBtRegisterOps(const esphostedHciOps *ops);
 }
 
-// The core's link lock (cores/rp2040/lwip_wrap.h): every pass into the
-// driver must hold it so the DATA_READY GPIO IRQ and the lwIP background
-// pump never run inside the driver concurrently with BTstack servicing.
+// The core's link lock: every pass into the driver must hold it so the
+// DATA_READY GPIO IRQ and the lwIP background pump never run inside the
+// driver concurrently with BTstack servicing.  Under FreeRTOS that lock is
+// the core's shared recursive BT/link mutex (LWIPMutex is a no-op there);
+// see cores/rp2040/esphosted_bt.h.
 #include <lwip_wrap.h>
+#ifdef __FREERTOS
+extern "C" {
+void esphostedBtLock(void);
+void esphostedBtUnlock(void);
+}
+#endif
 
 static volatile bool s_linkUp = false;
 
@@ -73,8 +81,14 @@ static bool glueBringUp(void) {
     uint32_t start = millis();
     while (!s_linkUp && (millis() - start < 10000)) {
         {
+#ifdef __FREERTOS
+            esphostedBtLock();
+            CEspControl::getInstance().communicateWithEsp();
+            esphostedBtUnlock();
+#else
             LWIPMutex m;
             CEspControl::getInstance().communicateWithEsp();
+#endif
         }
         delay(100);
     }
